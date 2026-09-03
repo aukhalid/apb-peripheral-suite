@@ -9,9 +9,6 @@
 //               - Interrupt signaling for TX empty and RX ready events.
 // ==============================================================================
 
-`timescale 1ns / 1ps
-`default_nettype none
-
 module apb_uart
   import apb_pkg::*;
 #(

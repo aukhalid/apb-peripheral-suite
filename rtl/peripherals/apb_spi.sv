@@ -9,8 +9,6 @@
 //               - Active-low slave select driver with transfer interrupt generation.
 // ==============================================================================
 
-`timescale 1ns / 1ps
-`default_nettype none
 
 module apb_spi
   import apb_pkg::*;

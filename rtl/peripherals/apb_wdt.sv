@@ -9,9 +9,6 @@
 //               - Generates interrupt alert and system reset pulse upon expiry.
 // ==============================================================================
 
-`timescale 1ns / 1ps
-`default_nettype none
-
 module apb_wdt
   import apb_pkg::*;
 #(
