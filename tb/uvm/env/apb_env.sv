@@ -13,9 +13,9 @@
 `include "uvm_macros.svh"
 import uvm_pkg::*;
 
-`include "apb_agent.sv"
-`include "apb_scoreboard.sv"
-`include "apb_coverage.sv"
+// `include "apb_agent.sv"
+// `include "apb_scoreboard.sv"
+// `include "apb_coverage.sv"
 
 class apb_env extends uvm_env;
   `uvm_component_utils(apb_env)

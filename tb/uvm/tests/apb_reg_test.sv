@@ -14,7 +14,7 @@
 `include "uvm_macros.svh"
 import uvm_pkg::*;
 
-`include "base_test.sv"
+// `include "base_test.sv"
 
 class apb_reg_test extends base_test;
   `uvm_component_utils(apb_reg_test)

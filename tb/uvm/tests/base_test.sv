@@ -14,8 +14,8 @@
 `include "uvm_macros.svh"
 import uvm_pkg::*;
 
-`include "apb_env.sv"
-`include "apb_base_seq.sv"
+// `include "apb_env.sv"
+// `include "apb_base_seq.sv"
 
 class base_test extends uvm_test;
   `uvm_component_utils(base_test)
@@ -41,11 +41,11 @@ class base_test extends uvm_test;
   // ----------------------------------------------------------------------------
   // End of Elaboration: Print topology structure
   // ----------------------------------------------------------------------------
-  function void end_of_elaboration_phase(uvm_phase phase);
-    super.end_of_elaboration_phase(phase);
-    `uvm_info("BASE_TEST", "Printing UVM Component Topology Hierarchy:", UVM_LOW)
-    uvm_top.print_topology();
-  endfunction : end_of_elaboration_phase
+  // function void end_of_elaboration_phase(uvm_phase phase);
+  //   super.end_of_elaboration_phase(phase);
+  //   `uvm_info("BASE_TEST", "Printing UVM Component Topology Hierarchy:", UVM_LOW)
+  //   uvm_top.print_topology();
+  // endfunction : end_of_elaboration_phase
 
   // ----------------------------------------------------------------------------
   // Run Phase: Base test execution watchdog

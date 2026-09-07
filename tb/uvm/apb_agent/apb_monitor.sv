@@ -35,8 +35,8 @@ class apb_monitor extends uvm_monitor;
 
     forever begin
       @(posedge vif.pclk);
-      // Sample during valid APB ACCESS completion phase
-      if (vif.presetn && vif.psel && vif.penable && vif.pready) begin
+      // Sample transaction during valid access handshake
+      if (vif.presetn === 1'b1 && vif.psel === 1'b1 && vif.penable === 1'b1 && vif.pready === 1'b1) begin
         trans = apb_seq_item::type_id::create("trans");
         trans.paddr   = vif.paddr;
         trans.pwrite  = vif.pwrite;

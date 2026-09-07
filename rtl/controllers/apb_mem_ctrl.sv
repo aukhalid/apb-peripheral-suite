@@ -36,9 +36,9 @@ module apb_mem_ctrl
   // ----------------------------------------------------------------------------
   // Internal RAM Control Signals
   // ----------------------------------------------------------------------------
-  logic                    ram_wr_en = psel_i & penable_i & pwrite_i;
-  logic [RamAddrWidth-1:0] ram_addr = paddr_i[RamAddrWidth+1:2];  // Word-aligned
-  logic [   DataWidth-1:0] ram_rd_data;
+  logic ram_wr_en = (presetn_i && psel_i === 1'b1 && penable_i === 1'b1 && pwrite_i === 1'b1);
+  logic [RamAddrWidth-1:0] ram_addr = (psel_i) ? paddr_i[RamAddrWidth+1:2] : '0;
+  logic [DataWidth-1:0] ram_rd_data;
 
   // ----------------------------------------------------------------------------
   // Reused Single-Port RAM Instance (sv-common-ip-library)

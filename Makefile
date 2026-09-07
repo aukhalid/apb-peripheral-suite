@@ -6,7 +6,7 @@
 #               - Static code linting with Verilator
 #               - UVM & SVA Simulation with AMD Vivado XSim
 #               - IP reuse integration from sv-common-ip-library submodule
-#               - GTKWave visualizer and artifact isolation
+#               - Quiet Terminal: Displays only WARNING, ERROR, FATAL, and Test Reports
 # ==============================================================================
 
 ### ------------------------------------------------------------------------------
@@ -17,13 +17,13 @@ BUILD_DIR   := $(PWD)/build
 WAVE_DIR    := $(BUILD_DIR)/waves
 SUBMODULE   := $(PWD)/submodule/sv-common-ip-library
 
-### Submodule Assets Discovery (Recursive & Robust)
+### Submodule Assets Discovery (Recursive)
 COMMON_PKGS   := $(abspath $(sort $(shell find $(SUBMODULE)/common/packages -name "*.sv" 2>/dev/null)))
 COMMON_IFS    := $(abspath $(sort $(shell find $(SUBMODULE)/common/interfaces -name "*.sv" 2>/dev/null)))
 COMMON_ASRT   := $(abspath $(sort $(shell find $(SUBMODULE)/common/assertions -name "*.sv" 2>/dev/null)))
 COMMON_MACROS := $(SUBMODULE)/common/macros
 
-# Recursively capture all RTL files from the submodule (e.g., sync_fifo, single_port_ram, fixed_arbiter)
+# Reused RTL modules from Project 1
 REUSED_RTL    := $(abspath $(sort $(shell find $(SUBMODULE) -path "*/rtl/*.sv" 2>/dev/null)))
 
 ### Project 2 RTL Source Discovery
@@ -36,9 +36,7 @@ ALL_RTL     := $(INTC_SRCS) $(CTRL_SRCS) $(PERIPH_SRCS) $(TOP_RTL)
 
 ### Project 2 Verification / TB Discovery
 TB_IF       := $(abspath $(sort $(wildcard tb/if/*.sv)))
-TB_AGENT    := $(abspath $(sort $(wildcard tb/uvm/apb_agent/*.sv)))
-TB_ENV      := $(abspath $(sort $(wildcard tb/uvm/env/*.sv)))
-TB_TESTS    := $(abspath $(sort $(wildcard tb/uvm/tests/*.sv)))
+TB_PKG      := $(abspath $(wildcard tb/uvm/apb_tb_pkg.sv))
 TB_TOP      := $(abspath $(wildcard tb/uvm/tb_top.sv))
 
 ### ------------------------------------------------------------------------------
@@ -52,6 +50,7 @@ VCD_FILE    := $(WAVE_DIR)/dump.vcd
 ### Include Directories
 VERILATOR_INC := -I$(PWD)/rtl/pkg \
                  -I$(PWD)/tb/if \
+                 -I$(PWD)/tb/uvm \
                  -I$(PWD)/tb/uvm/apb_agent \
                  -I$(PWD)/tb/uvm/env \
                  -I$(PWD)/tb/uvm/tests \
@@ -59,6 +58,7 @@ VERILATOR_INC := -I$(PWD)/rtl/pkg \
 
 XVLOG_INC     := -i $(PWD)/rtl/pkg \
                  -i $(PWD)/tb/if \
+                 -i $(PWD)/tb/uvm \
                  -i $(PWD)/tb/uvm/apb_agent \
                  -i $(PWD)/tb/uvm/env \
                  -i $(PWD)/tb/uvm/tests \
@@ -74,7 +74,10 @@ VERILATOR_FLAGS := --lint-only -Wall --assert -DSIMULATION $(VERILATOR_INC) \
 
 ### Vivado XSim Flags (Enables UVM & SVA)
 XVLOG_FLAGS := -sv $(XVLOG_INC) -d SIMULATION -L uvm
-XELAB_FLAGS := -L uvm -timescale 1ns/1ps -debug typical
+XELAB_FLAGS := -L uvm -timescale 1ns/1ps -debug all
+
+### Terminal Output Filter: Suppress noisy INFO lines, keep ERRORS, WARNINGS, & UVM reports
+FILTER_LOG := grep -E "ERROR|FATAL|WARNING|Error|Warning|Fatal|FAIL|\[PASS\]|\[FAIL\]|UVM_ERROR|UVM_FATAL|UVM_WARNING|SCB_|COV_|REG_TEST|BASE_TEST" || true
 
 .PHONY: all setup lint sim test wave clean help
 
@@ -104,34 +107,32 @@ lint:
 ### ------------------------------------------------------------------------------
 sim: setup
 	@echo "=== [SIM] Step 1: Compiling Submodule Packages & Infrastructure ==="
-	@if [ -n "$(strip $(COMMON_PKGS))" ]; then cd $(BUILD_DIR) && xvlog $(XVLOG_FLAGS) $(COMMON_PKGS); fi
-	@if [ -n "$(strip $(COMMON_IFS))" ];  then cd $(BUILD_DIR) && xvlog $(XVLOG_FLAGS) $(COMMON_IFS); fi
-	@if [ -n "$(strip $(COMMON_ASRT))" ]; then cd $(BUILD_DIR) && xvlog $(XVLOG_FLAGS) $(COMMON_ASRT); fi
-	@if [ -n "$(strip $(REUSED_RTL))" ];  then cd $(BUILD_DIR) && xvlog $(XVLOG_FLAGS) $(REUSED_RTL); fi
+	@if [ -n "$(strip $(COMMON_PKGS))" ]; then cd $(BUILD_DIR) && (xvlog $(XVLOG_FLAGS) $(COMMON_PKGS) 2>&1 | $(FILTER_LOG)); fi
+	@if [ -n "$(strip $(COMMON_IFS))" ];  then cd $(BUILD_DIR) && (xvlog $(XVLOG_FLAGS) $(COMMON_IFS) 2>&1 | $(FILTER_LOG)); fi
+	@if [ -n "$(strip $(COMMON_ASRT))" ]; then cd $(BUILD_DIR) && (xvlog $(XVLOG_FLAGS) $(COMMON_ASRT) 2>&1 | $(FILTER_LOG)); fi
+	@if [ -n "$(strip $(REUSED_RTL))" ];  then cd $(BUILD_DIR) && (xvlog $(XVLOG_FLAGS) $(REUSED_RTL) 2>&1 | $(FILTER_LOG)); fi
 	@echo "=== [SIM SUCCESS] Submodule Infrastructure Compiled ==="
 
 	@echo "=== [SIM] Step 2: Compiling APB Protocol Packages & Interfaces ==="
-	@if [ -n "$(strip $(PKG_SRCS))" ];    then cd $(BUILD_DIR) && xvlog $(XVLOG_FLAGS) $(PKG_SRCS); fi
-	@if [ -n "$(strip $(TB_IF))" ];       then cd $(BUILD_DIR) && xvlog $(XVLOG_FLAGS) $(TB_IF); fi
+	@if [ -n "$(strip $(PKG_SRCS))" ]; then cd $(BUILD_DIR) && (xvlog $(XVLOG_FLAGS) $(PKG_SRCS) 2>&1 | $(FILTER_LOG)); fi
+	@if [ -n "$(strip $(TB_IF))" ];    then cd $(BUILD_DIR) && (xvlog $(XVLOG_FLAGS) $(TB_IF) 2>&1 | $(FILTER_LOG)); fi
 	@echo "=== [SIM SUCCESS] APB Package & Interface Compiled ==="
 
 	@echo "=== [SIM] Step 3: Compiling APB Subsystem RTL ==="
-	@if [ -n "$(strip $(ALL_RTL))" ];     then cd $(BUILD_DIR) && xvlog $(XVLOG_FLAGS) $(ALL_RTL); fi
+	@if [ -n "$(strip $(ALL_RTL))" ];  then cd $(BUILD_DIR) && (xvlog $(XVLOG_FLAGS) $(ALL_RTL) 2>&1 | $(FILTER_LOG)); fi
 	@echo "=== [SIM SUCCESS] Subsystem RTL Compiled ==="
 
 	@echo "=== [SIM] Step 4: Compiling UVM Verification Components ==="
-	@if [ -n "$(strip $(TB_AGENT))" ];   then cd $(BUILD_DIR) && xvlog $(XVLOG_FLAGS) $(TB_AGENT); fi
-	@if [ -n "$(strip $(TB_ENV))" ];     then cd $(BUILD_DIR) && xvlog $(XVLOG_FLAGS) $(TB_ENV); fi
-	@if [ -n "$(strip $(TB_TESTS))" ];   then cd $(BUILD_DIR) && xvlog $(XVLOG_FLAGS) $(TB_TESTS); fi
-	@if [ -n "$(strip $(TB_TOP))" ];     then cd $(BUILD_DIR) && xvlog $(XVLOG_FLAGS) $(TB_TOP); fi
+	@if [ -n "$(strip $(TB_PKG))" ];  then cd $(BUILD_DIR) && (xvlog $(XVLOG_FLAGS) $(TB_PKG) 2>&1 | $(FILTER_LOG)); fi
+	@if [ -n "$(strip $(TB_TOP))" ];  then cd $(BUILD_DIR) && (xvlog $(XVLOG_FLAGS) $(TB_TOP) 2>&1 | $(FILTER_LOG)); fi
 	@echo "=== [SIM SUCCESS] UVM Testbench Compiled ==="
 
 	@echo "=== [SIM] Step 5: Elaborating Simulation Snapshot ==="
-	@cd $(BUILD_DIR) && xelab $(SIM_TOP) $(XELAB_FLAGS) -s $(SNAPSHOT)
+	@cd $(BUILD_DIR) && (xelab $(SIM_TOP) $(XELAB_FLAGS) -s $(SNAPSHOT) 2>&1 | $(FILTER_LOG))
 	@echo "=== [SIM SUCCESS] Elaboration Completed ==="
 
 	@echo "=== [SIM] Step 6: Executing UVM Test: $(TEST_NAME) ==="
-	@cd $(BUILD_DIR) && xsim $(SNAPSHOT) -testplusarg "UVM_TESTNAME=$(TEST_NAME)" -runall
+	@cd $(BUILD_DIR) && (xsim $(SNAPSHOT) -testplusarg "UVM_TESTNAME=$(TEST_NAME)" -runall 2>&1 | $(FILTER_LOG))
 	@if [ -f $(BUILD_DIR)/dump.vcd ]; then mv $(BUILD_DIR)/dump.vcd $(VCD_FILE); fi
 	@echo "=== [SIM SUCCESS] Simulation Finished! Waveform stored at $(VCD_FILE) ==="
 

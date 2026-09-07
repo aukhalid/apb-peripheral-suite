@@ -17,10 +17,11 @@
 `include "uvm_macros.svh"
 import uvm_pkg::*;
 import apb_pkg::*;
+import apb_tb_pkg::*;
 
-// Include all UVM tests into the compilation scope
-`include "base_test.sv"
-`include "apb_reg_test.sv"
+// // Include all UVM tests into the compilation scope
+// `include "base_test.sv"
+// `include "apb_reg_test.sv"
 
 module tb_top;
 

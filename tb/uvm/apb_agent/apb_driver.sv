@@ -1,10 +1,3 @@
-// ==============================================================================
-// AUTHOR      : Ahasan Ullah Khalid
-// PROJECT     : apb-peripheral-suite
-// FILE        : apb_driver.sv
-// DESCRIPTION : UVM Driver converting apb_seq_item to APB physical pin toggles.
-// ==============================================================================
-
 `ifndef APB_DRIVER_SV
 `define APB_DRIVER_SV
 
@@ -15,7 +8,6 @@ import apb_pkg::*;
 class apb_driver extends uvm_driver #(apb_seq_item);
   `uvm_component_utils(apb_driver)
 
-  // Virtual interface handle
   virtual apb_if vif;
 
   function new(string name = "apb_driver", uvm_component parent = null);
@@ -30,7 +22,7 @@ class apb_driver extends uvm_driver #(apb_seq_item);
   endfunction : build_phase
 
   task run_phase(uvm_phase phase);
-    // Initialize bus pins
+    // 1. Initialize all APB lines to deterministic 0 at Time 0
     vif.paddr   <= '0;
     vif.psel    <= 1'b0;
     vif.penable <= 1'b0;
@@ -39,8 +31,8 @@ class apb_driver extends uvm_driver #(apb_seq_item);
     vif.pstrb   <= '0;
     vif.pprot   <= '0;
 
-    // Wait for reset release
-    @(posedge vif.presetn);
+    // 2. Wait until tb_top releases reset
+    wait (vif.presetn === 1'b1);
     @(posedge vif.pclk);
 
     forever begin
@@ -50,41 +42,39 @@ class apb_driver extends uvm_driver #(apb_seq_item);
     end
   endtask : run_phase
 
-  // ----------------------------------------------------------------------------
-  // APB Protocol Driver Task (Setup Phase -> Access Phase Handshake)
-  // ----------------------------------------------------------------------------
   virtual task drive_transfer(apb_seq_item item);
-    // 1. SETUP PHASE: Drive address, control lines, and assert PSEL
+    // 1. SETUP PHASE
     @(posedge vif.pclk);
     vif.paddr   <= item.paddr;
     vif.pwrite  <= item.pwrite;
-    vif.pwdata  <= item.pwdata;
+    vif.pwdata  <= (item.pwrite) ? item.pwdata : '0;
     vif.pstrb   <= item.pstrb;
     vif.pprot   <= item.pprot;
     vif.psel    <= 1'b1;
     vif.penable <= 1'b0;
 
-    // 2. ACCESS PHASE: Assert PENABLE on the next clock cycle
+    // 2. ACCESS PHASE
     @(posedge vif.pclk);
     vif.penable <= 1'b1;
 
-    // Wait for PREADY handshake from slave
-    while (!vif.pready) begin
+    // Wait for slave to respond
+    @(posedge vif.pclk);
+    while (vif.pready !== 1'b1) begin
       @(posedge vif.pclk);
     end
 
-    // Capture read payload if read cycle
+    // Capture response on the completing edge
     if (!item.pwrite) begin
       item.prdata = vif.prdata;
     end
     item.pslverr = vif.pslverr;
 
-    // 3. COMPLETE / RETURN TO IDLE
-    @(posedge vif.pclk);
+    // 3. IDLE PHASE: Return strobe lines strictly to 0
     vif.psel    <= 1'b0;
     vif.penable <= 1'b0;
+    vif.pwrite  <= 1'b0;
   endtask : drive_transfer
 
 endclass : apb_driver
 
-`endif // APB_DRIVER_SV
+`endif  // APB_DRIVER_SV

@@ -13,10 +13,10 @@
 `include "uvm_macros.svh"
 import uvm_pkg::*;
 
-`include "apb_seq_item.sv"
-`include "apb_sequencer.sv"
-`include "apb_driver.sv"
-`include "apb_monitor.sv"
+// `include "apb_seq_item.sv"
+// `include "apb_sequencer.sv"
+// `include "apb_driver.sv"
+// `include "apb_monitor.sv"
 
 class apb_agent extends uvm_agent;
   `uvm_component_utils(apb_agent)
