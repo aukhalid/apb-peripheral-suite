@@ -10,9 +10,6 @@
 //               - Generates PSLVERR and DEAD_C0DE on unmapped address access.
 // ==============================================================================
 
-`timescale 1ns / 1ps
-`default_nettype none
-
 module apb_interconnect
   import apb_pkg::*;
 #(
@@ -132,5 +129,3 @@ module apb_interconnect
   end
 
 endmodule : apb_interconnect
-
-`default_nettype wire
