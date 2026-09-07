@@ -50,6 +50,7 @@ module apb_spi
   localparam logic [11:0] RegCtrl = 12'h008;
   localparam logic [11:0] RegClkDiv = 12'h00C;
   localparam logic [11:0] RegSsCtrl = 12'h010;
+  localparam int unsigned FifoAddrWidth = $clog2(FifoDepth);
 
   // ----------------------------------------------------------------------------
   // Registers & Internal State
@@ -83,41 +84,36 @@ module apb_spi
   logic [          7:0] rx_fifo_dout;
   logic                 rx_fifo_full;
   logic                 rx_fifo_empty;
-
   // Reused TX FIFO
   sync_fifo #(
       .DATA_WIDTH(8),
-      .DEPTH     (FifoDepth)
+      .ADDR_WIDTH(FifoAddrWidth)
   ) u_tx_fifo (
-      .clk_i         (pclk_i),
-      .rst_n_i       (presetn_i),
-      .wr_en_i       (tx_fifo_wr),
-      .rd_en_i       (tx_fifo_rd),
-      .wr_data_i     (tx_fifo_din),
-      .rd_data_o     (tx_fifo_dout),
-      .full_o        (tx_fifo_full),
-      .empty_o       (tx_fifo_empty),
-      .almost_full_o (),
-      .almost_empty_o(),
-      .fifo_level_o  ()
+      .clk_i      (pclk_i),
+      .arst_n_i   (presetn_i),
+      .wr_en_i    (tx_fifo_wr),
+      .wr_data_i  (tx_fifo_din),
+      .full_o     (tx_fifo_full),
+      .rd_en_i    (tx_fifo_rd),
+      .rd_data_o  (tx_fifo_dout),
+      .empty_o    (tx_fifo_empty),
+      .occupancy_o()
   );
 
   // Reused RX FIFO
   sync_fifo #(
       .DATA_WIDTH(8),
-      .DEPTH     (FifoDepth)
+      .ADDR_WIDTH(FifoAddrWidth)
   ) u_rx_fifo (
-      .clk_i         (pclk_i),
-      .rst_n_i       (presetn_i),
-      .wr_en_i       (rx_fifo_wr),
-      .rd_en_i       (rx_fifo_rd),
-      .wr_data_i     (rx_fifo_din),
-      .rd_data_o     (rx_fifo_dout),
-      .full_o        (rx_fifo_full),
-      .empty_o       (rx_fifo_empty),
-      .almost_full_o (),
-      .almost_empty_o(),
-      .fifo_level_o  ()
+      .clk_i      (pclk_i),
+      .arst_n_i   (presetn_i),
+      .wr_en_i    (rx_fifo_wr),
+      .wr_data_i  (rx_fifo_din),
+      .full_o     (rx_fifo_full),
+      .rd_en_i    (rx_fifo_rd),
+      .rd_data_o  (rx_fifo_dout),
+      .empty_o    (rx_fifo_empty),
+      .occupancy_o()
   );
 
   // ----------------------------------------------------------------------------
