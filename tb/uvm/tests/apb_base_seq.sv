@@ -12,6 +12,7 @@
 `define APB_BASE_SEQ_SV
 
 `include "uvm_macros.svh"
+`include "apb_seq_item.sv"
 import uvm_pkg::*;
 import apb_pkg::*;
 

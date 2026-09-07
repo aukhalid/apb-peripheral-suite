@@ -17,21 +17,14 @@ BUILD_DIR   := $(PWD)/build
 WAVE_DIR    := $(BUILD_DIR)/waves
 SUBMODULE   := $(PWD)/submodule/sv-common-ip-library
 
-### Submodule Assets Discovery
-COMMON_PKGS := $(abspath $(sort $(wildcard $(SUBMODULE)/common/packages/*.sv)))
-COMMON_IFS  := $(abspath $(sort $(wildcard $(SUBMODULE)/common/interfaces/*.sv)))
-COMMON_ASRT := $(abspath $(sort $(wildcard $(SUBMODULE)/common/assertions/*.sv)))
+### Submodule Assets Discovery (Recursive & Robust)
+COMMON_PKGS   := $(abspath $(sort $(shell find $(SUBMODULE)/common/packages -name "*.sv" 2>/dev/null)))
+COMMON_IFS    := $(abspath $(sort $(shell find $(SUBMODULE)/common/interfaces -name "*.sv" 2>/dev/null)))
+COMMON_ASRT   := $(abspath $(sort $(shell find $(SUBMODULE)/common/assertions -name "*.sv" 2>/dev/null)))
 COMMON_MACROS := $(SUBMODULE)/common/macros
 
-# Reused RTL modules from Project 1
-REUSED_RTL  := $(abspath $(sort $(wildcard $(SUBMODULE)/rtl/foundation/*/*.sv \
-                                           $(SUBMODULE)/rtl/memory/*/*.sv \
-                                           $(SUBMODULE)/rtl/datapath/*/*.sv \
-                                           $(SUBMODULE)/rtl/combinational/*/*.sv \
-                                           $(SUBMODULE)/foundation/*/*.sv \
-                                           $(SUBMODULE)/memory/*/*.sv \
-                                           $(SUBMODULE)/datapath/*/*.sv \
-                                           $(SUBMODULE)/combinational/*/*.sv)))
+# Recursively capture all RTL files from the submodule (e.g., sync_fifo, single_port_ram, fixed_arbiter)
+REUSED_RTL    := $(abspath $(sort $(shell find $(SUBMODULE) -path "*/rtl/*.sv" 2>/dev/null)))
 
 ### Project 2 RTL Source Discovery
 PKG_SRCS    := $(abspath $(sort $(wildcard rtl/pkg/*.sv)))
